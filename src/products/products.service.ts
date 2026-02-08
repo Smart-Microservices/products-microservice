@@ -1,18 +1,28 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
   async create(createProductDto: CreateProductDto) {
-    const product = await this.prisma.product.create({
+    const product = await this.prisma.product.findUnique({
+      where: {
+        name: createProductDto.name,
+      },
+    });
+
+    if (product) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: `El producto ${createProductDto.name} ya existe.`,
+      });
+    }
+
+    await this.prisma.product.create({
       data: createProductDto,
     });
     return product;
@@ -32,9 +42,10 @@ export class ProductsService {
     };
 
     if (page! > lastPage) {
-      throw new NotFoundException(
-        `La página ${page} excede la última página ${lastPage}`,
-      );
+      throw new RpcException({
+        status: HttpStatus.NOT_FOUND,
+        message: `La página ${page} excede la última página ${lastPage}`,
+      });
     }
 
     return {
@@ -55,7 +66,10 @@ export class ProductsService {
       where: { id, available: true },
     });
     if (!product) {
-      throw new NotFoundException(`Producto con id #${id} no encontrado`);
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: `Producto con id #${id} no encontrado`,
+      });
     }
     return product;
   }
@@ -67,9 +81,10 @@ export class ProductsService {
     await this.findOne(id);
 
     if (!data || Object.keys(data).length === 0) {
-      throw new BadRequestException(
-        `No se proporcionaron datos para actualizar el producto con id #${id}`,
-      );
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: `No se proporcionaron datos para actualizar el producto con id #${id}`,
+      });
     }
 
     const product = await this.prisma.product.update({
