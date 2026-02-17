@@ -2,8 +2,14 @@
 
 ## Dev
 
-1. Clonar repositorio
-2. Instalar dependecias
-3. Crear archivo `.env` con las variables de entorno basado en `.env.template`
-4. Ejecutar migración de prima `pnpm dlx prisma migrate dev`
-5. Ejecutar `npm run start:dev`
+- Clonar repositorio
+- Instalar dependecias
+- Crear archivo `.env` con las variables de entorno basado en `.env.template`
+- Ejecutar migración de prima `pnpm dlx prisma migrate dev`
+- Levantar el servidor de NATS:
+
+  ```bash
+    docker run -d --name nats-main -p 4222:4222 -p 6222:6222 -p 8222:8222 nats
+  ```
+
+- Ejecutar `npm run start:dev`
